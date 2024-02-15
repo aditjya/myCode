@@ -1,0 +1,128 @@
+import javax.swing.*;
+import java.awt.event.*;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class ScheduledAlarms {
+    private Timer timer;
+
+    public ScheduledAlarms() {
+        JFrame frame = new JFrame("Scheduled Alarms");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(300, 200);
+
+        JPanel panel = new JPanel();
+        frame.add(panel);
+        placeComponents(panel);
+
+        frame.setVisible(true);
+        timer = new Timer();
+    }
+
+    private void placeComponents(JPanel panel) {
+        panel.setLayout(null);
+
+        JLabel hourLabel = new JLabel("Enter Start Hour:");
+        hourLabel.setBounds(10, 20, 100, 25);
+        panel.add(hourLabel);
+
+        JTextField hourText = new JTextField(10);
+        hourText.setBounds(120, 20, 50, 25);
+        panel.add(hourText);
+
+        JLabel minuteLabel = new JLabel("Enter Start Minute:");
+        minuteLabel.setBounds(10, 50, 110, 25);
+        panel.add(minuteLabel);
+
+        JTextField minuteText = new JTextField(10);
+        minuteText.setBounds(120, 50, 50, 25);
+        panel.add(minuteText);
+
+        JButton setAlarmButton = new JButton("Set Start Time");
+        setAlarmButton.setBounds(10, 80, 150, 25);
+        panel.add(setAlarmButton);
+
+        setAlarmButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    int hour = Integer.parseInt(hourText.getText());
+                    int minute = Integer.parseInt(minuteText.getText());
+
+                    if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
+                        scheduleAlarms(hour, minute);
+                        JOptionPane.showMessageDialog(null, "Alarms scheduled to start at " + hour + ":" + minute);
+                    } else {
+                        JOptionPane.showMessageDialog(null, "Invalid time format! Please enter valid hour (0-23) and minute (0-59).");
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(null, "Invalid input! Please enter valid numbers for hour and minute.");
+                }
+            }
+        });
+    }
+
+    private void scheduleAlarms(int startHour, int startMinute) {
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        int currentHour = calendar.get(java.util.Calendar.HOUR_OF_DAY);
+        int currentMinute = calendar.get(java.util.Calendar.MINUTE);
+
+        int delayHours = startHour - currentHour;
+        int delayMinutes = startMinute - currentMinute;
+
+        if (delayHours < 0 || (delayHours == 0 && delayMinutes <= 0)) {
+            // If the specified time is in the past, add a day
+            delayHours += 24;
+        }
+
+        long delayMilliseconds = delayHours * 60 * 60 * 1000 + delayMinutes * 60 * 1000;
+
+        timer.schedule(new TimerTask() {
+            public void run() {
+                setMultipleAlarms();
+            }
+        }, delayMilliseconds);
+    }
+
+    private void setMultipleAlarms() {
+        int numberOfAlarms = 5; // Change this value to set the number of alarms
+
+        TimerTask task = new TimerTask() {
+            int count = 0;
+
+            public void run() {
+                int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+                int minute = java.util.Calendar.getInstance().get(java.util.Calendar.MINUTE);
+
+                JOptionPane.showMessageDialog(null, "Wake up! It's " + hour + ":" + minute + ". Alarm triggered.");
+
+                count++;
+                if (count < numberOfAlarms) {
+                    scheduleNextAlarm();
+                } else {
+                    timer.cancel(); // Stop the timer after all alarms trigger
+                }
+            }
+
+            private void scheduleNextAlarm() {
+                java.util.Calendar calendar = java.util.Calendar.getInstance();
+                calendar.add(java.util.Calendar.MINUTE, 5);
+
+                int nextHour = calendar.get(java.util.Calendar.HOUR_OF_DAY);
+                int nextMinute = calendar.get(java.util.Calendar.MINUTE);
+
+                timer.schedule(this, calendar.getTime());
+            }
+        };
+
+        // Schedule the first alarm
+        timer.schedule(task, 0);
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                new ScheduledAlarms();
+            }
+        });
+    }
+}
